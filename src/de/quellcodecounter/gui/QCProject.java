@@ -8,9 +8,17 @@ import java.util.List;
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
 	private final File path;
 	
-	private final static String[] FILETYPES = {"java", "properties", "cs", "h", "c", "hpp", "cpp", "hxx", "inc", "js", "tf", "pas"};
-	private final static String[] IGNORE_DIR = {",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include"};
-	private final static String[] IGNORE_FILES = {"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h"};
+	private final static String[] FILETYPES = {
+		"java", "properties", "cs", "h", "c", "hpp", "cpp", "hxx", "inc", "js", "tf", "pas", "dpr"
+	};
+	
+	private final static String[] IGNORE_DIR = {
+		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include"
+	};
+	
+	private final static String[] IGNORE_FILES = {
+		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h"
+	};
 	
 	ArrayList<QCFile> files = new ArrayList<>();
 	
