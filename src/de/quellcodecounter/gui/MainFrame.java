@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -24,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -38,11 +41,11 @@ import javax.swing.tree.TreeSelectionModel;
 public class MainFrame extends JFrame {
 	private static final long serialVersionUID = 4797308975806818438L;
 	private JSplitPane pnlMain;
-	private JPanel pnlRight;
+	private JPanel pnlFiles;
 	private JScrollPane scrollPane;
 	private JScrollPane scrollPane_1;
-	private JList<String> lsFiles;
-	private JPanel panel_1;
+	private JList<QCFile> lsFiles;
+	private JPanel pnlLineCount;
 	private JLabel lblLines;
 	private JPanel pnlLeft;
 	private JPanel pnlAction;
@@ -53,10 +56,16 @@ public class MainFrame extends JFrame {
 	private JPanel pnlPath;
 	private JTextField edPath;
 	private JTree treeProjects;
+	private JTabbedPane pnlRight;
+	private JPanel pnlSpecLines;
+	private JScrollPane scrollPane_2;
+	private JList<QCLine> lsSpecLines;
+	private JTextField edSpecLineRegex;
+	private JPanel pnlSpecLineRegex;
 	
 	public MainFrame() {
 		super();
-		setTitle("QC Counter 2.2");
+		setTitle("QC Counter 2.3");
 		
 		initGUI();
 		
@@ -73,38 +82,6 @@ public class MainFrame extends JFrame {
 		pnlMain.setContinuousLayout(true);
 		pnlMain.setResizeWeight(0.5);
 		getContentPane().add(pnlMain, BorderLayout.CENTER);
-		
-		pnlRight = new JPanel();
-		pnlMain.setRightComponent(pnlRight);
-		pnlRight.setLayout(new BorderLayout(0, 0));
-		
-		scrollPane_1 = new JScrollPane();
-		pnlRight.add(scrollPane_1, BorderLayout.CENTER);
-		
-		lsFiles = new JList<>();
-		lsFiles.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
-					if (treeProjects.getSelectionPath() != null) {
-						QCDisplayableProjectElement p = (QCDisplayableProjectElement) ((DefaultMutableTreeNode) treeProjects.getLastSelectedPathComponent()).getUserObject();
-						
-						if (lsFiles.getSelectedIndex() >= 0) {
-							QCFile f = p.getFiles().get(lsFiles.getSelectedIndex());
-							f.open();
-						}
-					}
-				}
-			}
-		});
-		lsFiles.setFont(new Font("Courier New", Font.PLAIN, 14));
-		scrollPane_1.setViewportView(lsFiles);
-		
-		panel_1 = new JPanel();
-		pnlRight.add(panel_1, BorderLayout.NORTH);
-		
-		lblLines = new JLabel("#");
-		panel_1.add(lblLines);
 		
 		pnlLeft = new JPanel();
 		pnlMain.setLeftComponent(pnlLeft);
@@ -172,6 +149,66 @@ public class MainFrame extends JFrame {
 		edPath = new JTextField();
 		pnlPath.add(edPath);
 		edPath.setColumns(10);
+		
+		pnlRight = new JTabbedPane(JTabbedPane.BOTTOM);
+		pnlMain.setRightComponent(pnlRight);
+		
+		pnlFiles = new JPanel();
+		pnlRight.addTab("Files", null, pnlFiles, null);
+		pnlFiles.setLayout(new BorderLayout(0, 0));
+		
+		scrollPane_1 = new JScrollPane();
+		pnlFiles.add(scrollPane_1, BorderLayout.CENTER);
+		
+		lsFiles = new JList<>();
+		lsFiles.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
+					if (lsFiles.getSelectedIndex() >= 0) {
+						lsFiles.getSelectedValue().open();
+					}
+				}
+			}
+		});
+		lsFiles.setFont(new Font("Courier New", Font.PLAIN, 14));
+		scrollPane_1.setViewportView(lsFiles);
+		
+		pnlLineCount = new JPanel();
+		pnlFiles.add(pnlLineCount, BorderLayout.NORTH);
+		
+		lblLines = new JLabel("#");
+		pnlLineCount.add(lblLines);
+		
+		pnlSpecLines = new JPanel();
+		pnlRight.addTab("Special Lines", null, pnlSpecLines, null);
+		pnlSpecLines.setLayout(new BorderLayout(0, 0));
+		
+		scrollPane_2 = new JScrollPane();
+		pnlSpecLines.add(scrollPane_2, BorderLayout.CENTER);
+		
+		lsSpecLines = new JList<>();
+		lsSpecLines.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
+					if (lsSpecLines.getSelectedIndex() >= 0) {
+						lsSpecLines.getSelectedValue().open();
+					}
+				}
+			}
+		});
+		scrollPane_2.setViewportView(lsSpecLines);
+		
+		pnlSpecLineRegex = new JPanel();
+		pnlSpecLineRegex.setBorder(new EmptyBorder(2, 2, 2, 2));
+		pnlSpecLines.add(pnlSpecLineRegex, BorderLayout.NORTH);
+		pnlSpecLineRegex.setLayout(new BorderLayout(0, 0));
+		
+		edSpecLineRegex = new JTextField();
+		edSpecLineRegex.setText(".*(TODO|FIXME).*");
+		pnlSpecLineRegex.add(edSpecLineRegex);
+		edSpecLineRegex.setColumns(10);
 	}
 	
 	public void showInExplorer(String abspath) {
@@ -258,7 +295,14 @@ public class MainFrame extends JFrame {
 			}
 		});
 		
-		scanner.scan(edPath.getText());
+		Pattern regex = null;
+		try {
+			regex = Pattern.compile(edSpecLineRegex.getText(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+		} catch (PatternSyntaxException e) {
+			// --
+		}
+		
+		scanner.scan(edPath.getText(), regex);
 	}
 
 	private void updateGUI(boolean refList) {
@@ -286,21 +330,58 @@ public class MainFrame extends JFrame {
 		
 		if (treeProjects.getSelectionPath() != null) {
 			QCDisplayableProjectElement p = (QCDisplayableProjectElement) ((DefaultMutableTreeNode) treeProjects.getLastSelectedPathComponent()).getUserObject();
-			lblLines.setText(p.getLineCount() + " Zeilen. " + p.getFileCount() + ((p.getFileCount()==1) ? (" Datei.") : (" Dateien.")));
+			lblLines.setText(
+				p.getLineCount() + 
+				(
+					(p.getLineCount()==1) ? 
+						(" Zeile. ") : 
+						(" Zeilen. ")
+				) + 
+				p.getFileCount() + 
+				(
+					(p.getFileCount()==1) ? 
+						(" Datei. ") : 
+						(" Dateien. ")
+				) + 
+				p.getSpecLineCount() + 
+				(
+					(p.getSpecLineCount() == 1) ? 
+						(" Match. ") : 
+						(" Matches. ")
+				)
+			);
 			
-			DefaultListModel<String> mdlF;
+			
+			DefaultListModel<QCFile> mdlF;
 			lsFiles.setModel(mdlF = new DefaultListModel<>());
 			
 			for (QCFile f : p.getFiles()) {
-				mdlF.addElement(String.format("% 5d ", f.getLineCount()) + f.getName());
+				mdlF.addElement(f);
 			}
 			
 			scrollPane_1.getVerticalScrollBar().setValue(0);
+			
+			//################################################
+			
+			DefaultListModel<QCLine> mdlF2;
+			lsSpecLines.setModel(mdlF2 = new DefaultListModel<>());
+			
+			for (QCLine l : p.getSpecLines()) {
+				mdlF2.addElement(l);
+			}
+			
+			scrollPane_2.getVerticalScrollBar().setValue(0);
 		} else {
-			DefaultListModel<String> mdlF;
+			DefaultListModel<QCFile> mdlF;
 			lsFiles.setModel(mdlF = new DefaultListModel<>());
 			mdlF.clear();
 			lblLines.setText("#");
+			
+			//################################################
+			
+			DefaultListModel<QCLine> mdlF2;
+			lsSpecLines.setModel(mdlF2 = new DefaultListModel<>());
+			mdlF2.clear();
 		}
 	}
 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProjectElement {
 	private final File path;
@@ -22,9 +23,9 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 		projects.addAll(proj);
 	}
 
-	public void init() {
+	public void init(Pattern specFileRegex) {
 		for (QCProject proj : projects) {
-			proj.init();
+			proj.init(specFileRegex);
 		}
 		
 		Collections.sort(projects);
@@ -74,6 +75,26 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 	
 	@Override
 	public String toString() {
-		return String.format("% 6d ", getLineCount()) + getName();
+		int slc = getSpecLineCount();
+		String s_slc = (slc == 0) ? ("") : ((slc == 1) ? ("  [" + getSpecLineCount() + " Match]") : (" [" + getSpecLineCount() + " Matches]"));
+		return String.format("% 6d ", getLineCount()) + getName() + s_slc;
+	}
+
+	@Override
+	public List<QCLine> getSpecLines() {
+		List<QCLine> result = new ArrayList<>();
+		for (QCProject f : projects) {
+			result.addAll(f.getSpecLines());
+		}
+		return result;
+	}
+
+	@Override
+	public int getSpecLineCount() {
+		int result = 0;
+		for (QCProject p : projects) {
+			result += p.getSpecLineCount();
+		}
+		return result;
 	}
 }

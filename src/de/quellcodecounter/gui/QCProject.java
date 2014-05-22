@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
 	private final File path;
@@ -26,7 +27,7 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		path = p;
 	}
 
-	public void init() {
+	public void init(Pattern specFileRegex) {
 		ArrayList<File> flist = dirjavaFind(path);
 		
 		for (File f : flist) {
@@ -34,7 +35,7 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		}
 		
 		for (QCFile qc : files) {
-			qc.init();
+			qc.init(specFileRegex);
 		}
 		
 		Collections.sort(files);
@@ -140,6 +141,26 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 	
 	@Override
 	public String toString() {
-		return String.format("% 6d ", getLineCount()) + getName();
+		int slc = getSpecLineCount();
+		String s_slc = (slc == 0) ? ("") : ((slc == 1) ? ("  [" + getSpecLineCount() + " Match]") : (" [" + getSpecLineCount() + " Matches]"));
+		return String.format("% 6d ", getLineCount()) + getName() + s_slc;
+	}
+
+	@Override
+	public List<QCLine> getSpecLines() {
+		List<QCLine> result = new ArrayList<>();
+		for (QCFile f : files) {
+			result.addAll(f.getSpecLines());
+		}
+		return result;
+	}
+
+	@Override
+	public int getSpecLineCount() {
+		int result = 0;
+		for (QCFile f : files) {
+			result += f.getSpecLineCount();
+		}
+		return result;
 	}
 }

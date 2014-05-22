@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class ProjectScanner {
 	private final static int MAX_SCAN_DEPTH = 8;
@@ -34,7 +35,7 @@ public class ProjectScanner {
 		this.listener = l;
 	}
 	
-	public void scan(String dir) {
+	public void scan(String dir, Pattern specFileRegex) {
 		List<QCProjectSet> projects = new ArrayList<>();
 		
 		listener.onInit();
@@ -46,7 +47,7 @@ public class ProjectScanner {
 		for (int i = 0; i < projects.size(); i++) {
 			QCProjectSet p = projects.get(i);
 			
-			p.init();
+			p.init(specFileRegex);
 			
 			listener.setProgress(i);
 			

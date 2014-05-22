@@ -9,4 +9,6 @@ public interface QCDisplayableProjectElement {
 	public List<QCFile> getFiles();
 	public int getFileCount();
 	public File getPath();
+	public List<QCLine> getSpecLines();
+	public int getSpecLineCount();
 }
