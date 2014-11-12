@@ -7,8 +7,16 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
+	public final static String VERSION = "2.4";
+	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;
+	
+	private final static String[] PROJECT_SETS = {
+		".sln",			// VS Solution
+		"build.gradle", // gradle Multi Project
+	};
+	
 	private final static String[] PROJECT_EXTENSIONS = {
 		".project",		// Eclipse Project 
 		".csproj", 		// VS C# Project
@@ -23,10 +31,20 @@ public class ProjectScanner {
 		".bdsproj",		// Borland Developer Studio Project
 		".dproj",		// Delphi Project
 		".tfp",			// BefunWrite (TextFunge) Project
+		".wsp",			// WinShell Project
+		"build.gradle", // gradle Project
 	};
 	
-	private final static String[] PROJECT_SETS = {
-		".sln",		// VS Solution
+	public final static String[] FILETYPES = {
+		"java", "properties", "cs", "h", "c", "hpp", "cpp", "hxx", "inc", "js", "tf", "pas", "dpr", "tex",
+	};
+	
+	public final static String[] IGNORE_DIR = {
+		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include", "org/cocos2d",
+	};
+	
+	public final static String[] IGNORE_FILES = {
+		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h", "R.java",
 	};
 	
 	private ScanEventListener listener;
@@ -96,10 +114,10 @@ public class ProjectScanner {
 			List<File> folder = dirFolderlist(dir);
 
 			for (File f : folder) {
-				if (isSingleProjectDirectory(f)) {
-					result.add(new QCProjectSet(f, new QCProject(f)));
-				} else if (isProjectSetDirectory(f)) {
+				if (isProjectSetDirectory(f)) {
 					result.add(new QCProjectSet(f, getProjectList(f, MAX_SET_SCAN_DEPTH)));
+				} else if (isSingleProjectDirectory(f)) {
+					result.add(new QCProjectSet(f, new QCProject(f)));
 				} else {
 					result.addAll(getProjectSetList(f, negDepth - 1));
 				}

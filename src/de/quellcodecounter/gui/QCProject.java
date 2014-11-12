@@ -9,18 +9,6 @@ import java.util.regex.Pattern;
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
 	private final File path;
 	
-	private final static String[] FILETYPES = {
-		"java", "properties", "cs", "h", "c", "hpp", "cpp", "hxx", "inc", "js", "tf", "pas", "dpr"
-	};
-	
-	private final static String[] IGNORE_DIR = {
-		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include"
-	};
-	
-	private final static String[] IGNORE_FILES = {
-		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h"
-	};
-	
 	ArrayList<QCFile> files = new ArrayList<>();
 	
 	public QCProject(File p) {
@@ -75,7 +63,7 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		String fname = f.getName();
 		
 		boolean check_ft = false;
-		for (String s : FILETYPES) {
+		for (String s : ProjectScanner.FILETYPES) {
 			if (s.equalsIgnoreCase(end)) {
 				check_ft = true;
 				break;
@@ -83,7 +71,7 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		}
 		
 		boolean check_name = true;
-		for (String s : IGNORE_FILES) {
+		for (String s : ProjectScanner.IGNORE_FILES) {
 			if (s.equalsIgnoreCase(fname)) {
 				check_name = false;
 				break;
@@ -94,10 +82,10 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 	}
 	
 	private boolean IsIgnorableDirectory(File f) {
-		String nm = f.getName().toLowerCase();
+		String nm = f.getAbsolutePath().replaceAll("\\\\", "/");
 		
-		for (String s : IGNORE_DIR) {
-			if (nm.equalsIgnoreCase(s)) {
+		for (String s : ProjectScanner.IGNORE_DIR) {
+			if (nm.endsWith(s.toLowerCase())) {
 				return true;
 			}
 		}

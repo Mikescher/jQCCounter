@@ -65,7 +65,7 @@ public class MainFrame extends JFrame {
 	
 	public MainFrame() {
 		super();
-		setTitle("QC Counter 2.3");
+		setTitle("QC Counter " + ProjectScanner.VERSION);
 		
 		initGUI();
 		
