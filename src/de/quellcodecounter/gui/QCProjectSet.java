@@ -3,7 +3,10 @@ package de.quellcodecounter.gui;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProjectElement {
@@ -95,6 +98,22 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 		for (QCProject p : projects) {
 			result += p.getSpecLineCount();
 		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Integer> getLanguageDistro() {
+		Map<String, Integer> result = new HashMap<String, Integer>();
+		
+		for (QCProject qcProject : projects) {
+			for (Entry<String, Integer> entry : qcProject.getLanguageDistro().entrySet()) {
+				if (result.containsKey(entry.getKey()))
+					result.put(entry.getKey(), result.get(entry.getKey()) + entry.getValue());
+				else
+					result.put(entry.getKey(), entry.getValue());
+			}
+		}
+		
 		return result;
 	}
 }

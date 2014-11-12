@@ -1,13 +1,15 @@
 package de.quellcodecounter.gui;
 
+import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
-	public final static String VERSION = "2.4";
+	public final static String VERSION = "2.5";
 	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;
@@ -32,19 +34,70 @@ public class ProjectScanner {
 		".dproj",		// Delphi Project
 		".tfp",			// BefunWrite (TextFunge) Project
 		".wsp",			// WinShell Project
+		".idea/",		// PHPStorm and other IDEA projects
 		"build.gradle", // gradle Project
 	};
 	
-	public final static String[] FILETYPES = {
-		"java", "properties", "cs", "h", "c", "hpp", "cpp", "hxx", "inc", "js", "tf", "pas", "dpr", "tex",
+	public final static String[] FILETYPE_EXTENSIONS = {
+		"java", 
+		"properties",
+		"cs", 
+		"h", "c", 
+		"hpp", "cpp", "hxx", 
+		"inc", "php", 
+		"html", "htm",
+		"js", 
+		"tf", 
+		"pas", "dpr", 
+		"tex",
+		".gradle"
 	};
 	
+	public final static String[] FILETYPE_NAMES = {
+		"Java", 
+		"Properties", 
+		"C#", 
+		"C", "C", 
+		"C++", "C++", "C++", 
+		"PHP", "PHP", 
+		"HTML", "HTML",
+		"javascript", 
+		"Textfunge", 
+		"Delphi", "Delphi", 
+		"LaTeX",
+		"Groovy"
+	};
+	
+	public final static HashMap<String, Color> FILETYPE_COLORS = new HashMap<>();
+	static {
+		FILETYPE_COLORS.put("Java", Color.decode("#b07219"));
+		FILETYPE_COLORS.put("Delphi", Color.decode("#b0ce4e"));
+		FILETYPE_COLORS.put("Perl", Color.decode("#0298c3"));
+		FILETYPE_COLORS.put("Lua", Color.decode("#fa1fa1"));
+		FILETYPE_COLORS.put("Assembly", Color.decode("#a67219"));
+		FILETYPE_COLORS.put("C#", Color.decode("#5a25a2"));
+		FILETYPE_COLORS.put("Haskell", Color.decode("#29b544"));
+		FILETYPE_COLORS.put("Ruby", Color.decode("#701516"));
+		FILETYPE_COLORS.put("Groovy", Color.decode("#e69f56"));
+		FILETYPE_COLORS.put("C", Color.decode("#555"));
+		FILETYPE_COLORS.put("JavaScript", Color.decode("#f15501"));
+		FILETYPE_COLORS.put("C++", Color.decode("#f34b7d"));
+		FILETYPE_COLORS.put("Objective-C", Color.decode("#f15501"));
+		FILETYPE_COLORS.put("Python", Color.decode("#3581ba"));
+		FILETYPE_COLORS.put("Visual Basic", Color.decode("#945db7"));
+		FILETYPE_COLORS.put("PHP", Color.decode("#6e03c1"));
+		FILETYPE_COLORS.put("Matlab", Color.decode("#bb92ac"));
+		FILETYPE_COLORS.put("HTML", Color.decode("#7dd3b0"));
+		
+		FILETYPE_COLORS.put(null, Color.decode("#e4cc98"));
+	}
+	
 	public final static String[] IGNORE_DIR = {
-		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include", "org/cocos2d",
+		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include", "org/cocos2d", ".idea", "javadoc", "build",
 	};
 	
 	public final static String[] IGNORE_FILES = {
-		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h", "R.java",
+		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h", "R.java", "jQuery.js", "bootstrap.js",
 	};
 	
 	private ScanEventListener listener;
@@ -106,6 +159,21 @@ public class ProjectScanner {
 		}
 		return res;
 	}
+	
+	private ArrayList<File> dirDirlist(File f) {
+		ArrayList<File> res = new ArrayList<>();
+
+		if (f.exists() && f.isDirectory()) {
+			File[] chld = f.listFiles();
+
+			for (File sf : chld) {
+				if (!sf.getName().equals(".") && !sf.getName().equals("..") && sf.isDirectory()) {
+					res.add(sf);
+				}
+			}
+		}
+		return res;
+	}
 
 	private List<QCProjectSet> getProjectSetList(File dir, int negDepth) {
 		List<QCProjectSet> result = new ArrayList<>();
@@ -147,10 +215,18 @@ public class ProjectScanner {
 
 	private boolean isSingleProjectDirectory(File dir) {
 		List<File> files = dirFilelist(dir);
+		List<File> dirs = dirDirlist(dir);
 		
 		for (File f : files) {
 			for (String ext : PROJECT_EXTENSIONS) {
 				if (f.getName().endsWith(ext))
+					return true;
+			}
+		}
+		
+		for (File f : dirs) {
+			for (String ext : PROJECT_EXTENSIONS) {
+				if (ext.endsWith("/") && (f.getAbsolutePath().replaceAll("\\\\", "/") + "/").endsWith(ext))
 					return true;
 			}
 		}
@@ -160,10 +236,18 @@ public class ProjectScanner {
 
 	private boolean isProjectSetDirectory(File dir) {
 		List<File> files = dirFilelist(dir);
+		List<File> dirs = dirDirlist(dir);
 		
 		for (File f : files) {
 			for (String ext : PROJECT_SETS) {
 				if (f.getName().endsWith(ext))
+					return true;
+			}
+		}
+		
+		for (File f : dirs) {
+			for (String ext : PROJECT_SETS) {
+				if (ext.endsWith("/") && (f.getAbsolutePath().replaceAll("\\\\", "/") + "/").endsWith(ext))
 					return true;
 			}
 		}

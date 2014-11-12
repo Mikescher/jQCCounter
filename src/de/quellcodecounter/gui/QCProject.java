@@ -3,7 +3,9 @@ package de.quellcodecounter.gui;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
@@ -16,11 +18,7 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 	}
 
 	public void init(Pattern specFileRegex) {
-		ArrayList<File> flist = dirjavaFind(path);
-		
-		for (File f : flist) {
-			files.add(new QCFile(f));
-		}
+		files.addAll(dirjavaFind(path));
 		
 		for (QCFile qc : files) {
 			qc.init(specFileRegex);
@@ -29,43 +27,43 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		Collections.sort(files);
 	}
 	
-	private ArrayList<File> dirjavaFind(File f) {
-		ArrayList<File> result = new ArrayList<>();
+	private List<QCFile> dirjavaFind(File f) {
+		List<QCFile> result = new ArrayList<>();
 
 		if (!f.exists()) {
 			return result;
 		}
 
 		if (!f.isDirectory()) {
-			if (IsIndexableFile(f)) {
-				result.add(f);
+			String type = GetIndexableFileType(f);
+			if (type != null) {
+				result.add(new QCFile(f, type));
 			}
 			return result;
 		}
 		
 		if (f.isDirectory() && !IsIgnorableDirectory(f)) {
 			String[] chld = f.list();
-			ArrayList<File> res = new ArrayList<>();
 			if (chld != null) {
 				for (String s : chld) {
-					res.addAll(dirjavaFind(new File(f.getAbsolutePath() + '\\' + s)));
+					result.addAll(dirjavaFind(new File(f.getAbsolutePath() + '\\' + s)));
 				}
 			}
 			
-			return res;
+			return result;
 		}
 
 		return result;
 	}
 	
-	private boolean IsIndexableFile(File f) {
+	private String GetIndexableFileType(File f) {
 		String end = f.getName().substring(f.getName().lastIndexOf('.') + 1).toLowerCase();
 		String fname = f.getName();
 		
-		boolean check_ft = false;
-		for (String s : ProjectScanner.FILETYPES) {
-			if (s.equalsIgnoreCase(end)) {
-				check_ft = true;
+		String check_ft = null;
+		for (int i = 0; i < ProjectScanner.FILETYPE_EXTENSIONS.length; i++) {
+			if (ProjectScanner.FILETYPE_EXTENSIONS[i].equalsIgnoreCase(end)) {
+				check_ft = ProjectScanner.FILETYPE_NAMES[i];
 				break;
 			}
 		}
@@ -78,7 +76,11 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 			}
 		}
 		
-		return check_ft && check_name;
+		if (check_name) {
+			return check_ft;
+		} else {
+			return null;
+		}
 	}
 	
 	private boolean IsIgnorableDirectory(File f) {
@@ -149,6 +151,20 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		for (QCFile f : files) {
 			result += f.getSpecLineCount();
 		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Integer> getLanguageDistro() {
+		Map<String, Integer> result = new HashMap<String, Integer>();
+		
+		for (QCFile qcFile : files) {
+			if (result.containsKey(qcFile.getType()))
+				result.put(qcFile.getType(), result.get(qcFile.getType()) + qcFile.getLineCount());
+			else
+				result.put(qcFile.getType(), qcFile.getLineCount());
+		}
+		
 		return result;
 	}
 }

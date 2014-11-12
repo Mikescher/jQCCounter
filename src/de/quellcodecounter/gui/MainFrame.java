@@ -31,6 +31,7 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -62,6 +63,9 @@ public class MainFrame extends JFrame {
 	private JList<QCLine> lsSpecLines;
 	private JTextField edSpecLineRegex;
 	private JPanel pnlSpecLineRegex;
+	private JPanel pnlFilesTop;
+	private DistributionBar distroBar;
+	private JPanel panel;
 	
 	public MainFrame() {
 		super();
@@ -174,11 +178,23 @@ public class MainFrame extends JFrame {
 		lsFiles.setFont(new Font("Courier New", Font.PLAIN, 14));
 		scrollPane_1.setViewportView(lsFiles);
 		
+		pnlFilesTop = new JPanel();
+		pnlFiles.add(pnlFilesTop, BorderLayout.NORTH);
+		pnlFilesTop.setLayout(new BorderLayout(0, 0));
+		
 		pnlLineCount = new JPanel();
-		pnlFiles.add(pnlLineCount, BorderLayout.NORTH);
+		pnlFilesTop.add(pnlLineCount);
 		
 		lblLines = new JLabel("#");
 		pnlLineCount.add(lblLines);
+		
+		panel = new JPanel();
+		panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+		pnlFilesTop.add(panel, BorderLayout.SOUTH);
+		panel.setLayout(new BorderLayout(0, 0));
+		
+		distroBar = new DistributionBar();
+		panel.add(distroBar);
 		
 		pnlSpecLines = new JPanel();
 		pnlRight.addTab("Special Lines", null, pnlSpecLines, null);
@@ -351,6 +367,9 @@ public class MainFrame extends JFrame {
 				)
 			);
 			
+			distroBar.parts.clear();
+			distroBar.parts.putAll(p.getLanguageDistro());
+			distroBar.repaint();
 			
 			DefaultListModel<QCFile> mdlF;
 			lsFiles.setModel(mdlF = new DefaultListModel<>());

@@ -11,13 +11,17 @@ import java.util.regex.Pattern;
 
 public class QCFile implements Comparable<QCFile>{
 	private final File path;
+	private final String type;
 	
 	private int linecount;
 	
 	private List<QCLine> specialLines = new ArrayList<>();
 	
-	public QCFile(File f) {
+	public QCFile(File f, String type) {
+		super();
+		
 		this.path = f;
+		this.type = type;
 	}
 
 	public void init(Pattern specFileRegex) {
@@ -63,6 +67,10 @@ public class QCFile implements Comparable<QCFile>{
 
 	public String getName() {
 		return path.getName();
+	}
+
+	public String getType() {
+		return type;
 	}
 
 	public void open() {
