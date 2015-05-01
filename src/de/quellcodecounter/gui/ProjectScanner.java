@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
-	public final static String VERSION = "2.5";
+	public final static String VERSION = "2.6";
 	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;

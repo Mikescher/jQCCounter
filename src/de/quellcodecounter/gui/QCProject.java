@@ -11,7 +11,9 @@ import java.util.regex.Pattern;
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
 	private final File path;
 	
-	ArrayList<QCFile> files = new ArrayList<>();
+	public ArrayList<QCFile> files = new ArrayList<>();
+	
+	public GitInformation git = new GitInformation();
 	
 	public QCProject(File p) {
 		path = p;
@@ -25,6 +27,11 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		}
 		
 		Collections.sort(files);
+
+		File gitdir = new File(path, ".git");
+		if (gitdir.exists() && gitdir.isDirectory()) {
+			git.load(gitdir);
+		}
 	}
 	
 	private List<QCFile> dirjavaFind(File f) {
@@ -166,5 +173,10 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 		}
 		
 		return result;
+	}
+
+	@Override
+	public GitInformation getGitInformation() {
+		return git;
 	}
 }

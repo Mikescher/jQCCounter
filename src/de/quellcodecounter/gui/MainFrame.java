@@ -1,7 +1,11 @@
 package de.quellcodecounter.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +13,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,6 +35,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
@@ -38,6 +45,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
+import de.quellcodecounter.gui.GitInformation.GitInformationCommit;
+import java.awt.Component;
+import javax.swing.Box;
 
 public class MainFrame extends JFrame {
 	private static final long serialVersionUID = 4797308975806818438L;
@@ -57,7 +68,7 @@ public class MainFrame extends JFrame {
 	private JPanel pnlPath;
 	private JTextField edPath;
 	private JTree treeProjects;
-	private JTabbedPane pnlRight;
+	private JTabbedPane pnlRightTabs;
 	private JPanel pnlSpecLines;
 	private JScrollPane scrollPane_2;
 	private JList<QCLine> lsSpecLines;
@@ -66,6 +77,19 @@ public class MainFrame extends JFrame {
 	private JPanel pnlFilesTop;
 	private DistributionBar distroBar;
 	private JPanel panel;
+	private JPanel pnlGit;
+	private JScrollPane scrollPane_3;
+	private JPanel pnlRight;
+	private JPanel pnlGitInformation;
+	private JLabel lblGitBranch;
+	private JLabel lblGitAhead;
+	private JLabel lblGitBehind;
+	private JLabel lblGitCommits;
+	private JLabel lblGitRemoteLink;
+	private JPanel pnlRightBottomRight;
+	private JPanel pnlRightBottomLeft;
+	private GitCommitPanel pnlGitCommitList;
+	private Component horizontalStrut;
 	
 	public MainFrame() {
 		super();
@@ -76,6 +100,13 @@ public class MainFrame extends JFrame {
 		initValues();
 		
 		setLocationRelativeTo(null);
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				pnlMain.setDividerLocation(.5f);
+			}
+		});
 	}
 	
 	private void initGUI() {
@@ -129,6 +160,7 @@ public class MainFrame extends JFrame {
 		pnlAction.setLayout(new BorderLayout(5, 0));
 		
 		btnRefresh = new JButton("Refresh");
+		btnRefresh.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/search.png")));
 		btnRefresh.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -154,11 +186,15 @@ public class MainFrame extends JFrame {
 		pnlPath.add(edPath);
 		edPath.setColumns(10);
 		
-		pnlRight = new JTabbedPane(JTabbedPane.BOTTOM);
+		pnlRight = new JPanel();
 		pnlMain.setRightComponent(pnlRight);
+		pnlRight.setLayout(new BorderLayout(0, 0));
+		
+		pnlRightTabs = new JTabbedPane(JTabbedPane.BOTTOM);
+		pnlRight.add(pnlRightTabs, BorderLayout.CENTER);
 		
 		pnlFiles = new JPanel();
-		pnlRight.addTab("Files", null, pnlFiles, null);
+		pnlRightTabs.addTab("", new ImageIcon(MainFrame.class.getResource("/octicons/file-code.png")), pnlFiles, null);
 		pnlFiles.setLayout(new BorderLayout(0, 0));
 		
 		scrollPane_1 = new JScrollPane();
@@ -197,7 +233,7 @@ public class MainFrame extends JFrame {
 		panel.add(distroBar);
 		
 		pnlSpecLines = new JPanel();
-		pnlRight.addTab("Special Lines", null, pnlSpecLines, null);
+		pnlRightTabs.addTab("", new ImageIcon(MainFrame.class.getResource("/octicons/book.png")), pnlSpecLines, null);
 		pnlSpecLines.setLayout(new BorderLayout(0, 0));
 		
 		scrollPane_2 = new JScrollPane();
@@ -225,6 +261,75 @@ public class MainFrame extends JFrame {
 		edSpecLineRegex.setText(".*(TODO|FIXME).*");
 		pnlSpecLineRegex.add(edSpecLineRegex);
 		edSpecLineRegex.setColumns(10);
+		
+		pnlGit = new JPanel();
+		pnlRightTabs.addTab("", new ImageIcon(MainFrame.class.getResource("/octicons/history.png")), pnlGit, null);
+		pnlGit.setLayout(new BorderLayout(0, 0));
+		
+		scrollPane_3 = new JScrollPane();
+		scrollPane_3.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		pnlGit.add(scrollPane_3);
+		
+		pnlGitCommitList = new GitCommitPanel();
+		scrollPane_3.setViewportView(pnlGitCommitList);
+		
+		pnlGitInformation = new JPanel();
+		pnlGitInformation.setVisible(false);
+		pnlRight.add(pnlGitInformation, BorderLayout.SOUTH);
+		pnlGitInformation.setLayout(new BorderLayout(0, 0));
+		
+		pnlRightBottomRight = new JPanel();
+		FlowLayout fl_pnlRightBottomRight = (FlowLayout) pnlRightBottomRight.getLayout();
+		fl_pnlRightBottomRight.setHgap(10);
+		fl_pnlRightBottomRight.setVgap(0);
+		fl_pnlRightBottomRight.setAlignment(FlowLayout.RIGHT);
+		pnlGitInformation.add(pnlRightBottomRight, BorderLayout.CENTER);
+		
+		lblGitBranch = new JLabel("master");
+		pnlRightBottomRight.add(lblGitBranch);
+		lblGitBranch.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/git-branch.png")));
+		
+		lblGitCommits = new JLabel("293");
+		pnlRightBottomRight.add(lblGitCommits);
+		lblGitCommits.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/versions.png")));
+		
+		lblGitAhead = new JLabel("3");
+		pnlRightBottomRight.add(lblGitAhead);
+		lblGitAhead.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/arrow-up.png")));
+		
+		lblGitBehind = new JLabel("0");
+		pnlRightBottomRight.add(lblGitBehind);
+		lblGitBehind.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/arrow-down.png")));
+		
+		pnlRightBottomLeft = new JPanel();
+		pnlGitInformation.add(pnlRightBottomLeft, BorderLayout.WEST);
+		
+		lblGitRemoteLink = new JLabel("github.com/Mikescher/jClipCorn");
+		lblGitRemoteLink.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+				
+				if (desktop != null && treeProjects.getSelectionPath() != null) {
+					QCDisplayableProjectElement p = (QCDisplayableProjectElement) ((DefaultMutableTreeNode) treeProjects.getLastSelectedPathComponent()).getUserObject();
+					if (p.getGitInformation().isRepository && p.getGitInformation().remote != null) {
+						try {
+							desktop.browse(new URI(p.getGitInformation().remote.link));
+						} catch (IOException | URISyntaxException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		});
+		pnlRightBottomLeft.setLayout(new BorderLayout(0, 0));
+		lblGitRemoteLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		pnlRightBottomLeft.add(lblGitRemoteLink);
+		lblGitRemoteLink.setIcon(new ImageIcon(MainFrame.class.getResource("/octicons/mark-github.png")));
+		lblGitRemoteLink.setForeground(Color.BLUE);
+		
+		horizontalStrut = Box.createHorizontalStrut(10);
+		pnlRightBottomLeft.add(horizontalStrut, BorderLayout.WEST);
 	}
 	
 	public void showInExplorer(String abspath) {
@@ -390,6 +495,34 @@ public class MainFrame extends JFrame {
 			}
 			
 			scrollPane_2.getVerticalScrollBar().setValue(0);
+			
+			//################################################
+			
+			pnlGitCommitList.setCommits(p.getGitInformation().commits);
+			
+			scrollPane_3.getVerticalScrollBar().setValue(0);
+			
+			//################################################
+			
+			pnlGitInformation.setVisible(p.getGitInformation().isRepository);
+			if (p.getGitInformation().isRepository) {
+				lblGitBranch.setText(p.getGitInformation().branchShort);
+				lblGitCommits.setText("" + p.getGitInformation().commits.size());
+				
+				if (p.getGitInformation().remote != null) {
+					lblGitAhead.setText("" + p.getGitInformation().remote.ahead);
+					lblGitBehind.setText("" + p.getGitInformation().remote.behind);
+
+					lblGitRemoteLink.setText(p.getGitInformation().remote.name);
+					lblGitRemoteLink.setVisible(true);
+				} else {
+					lblGitAhead.setText("0");
+					lblGitBehind.setText("0");
+
+					lblGitRemoteLink.setText("");
+					lblGitRemoteLink.setVisible(false);
+				}
+			}
 		} else {
 			DefaultListModel<QCFile> mdlF;
 			lsFiles.setModel(mdlF = new DefaultListModel<>());
@@ -401,6 +534,15 @@ public class MainFrame extends JFrame {
 			DefaultListModel<QCLine> mdlF2;
 			lsSpecLines.setModel(mdlF2 = new DefaultListModel<>());
 			mdlF2.clear();
+			
+			//################################################
+
+			pnlGitCommitList.setCommits(new ArrayList<GitInformationCommit>());
+			scrollPane_3.getVerticalScrollBar().setValue(0);
+			
+			//################################################
+			
+			pnlGitInformation.setVisible(false);
 		}
 	}
 

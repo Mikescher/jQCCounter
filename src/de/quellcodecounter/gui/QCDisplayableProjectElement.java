@@ -13,4 +13,5 @@ public interface QCDisplayableProjectElement {
 	public List<QCLine> getSpecLines();
 	public int getSpecLineCount();
 	public Map<String, Integer> getLanguageDistro();
+	public GitInformation getGitInformation();
 }

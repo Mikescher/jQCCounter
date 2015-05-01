@@ -14,6 +14,8 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 
 	public List<QCProject> projects = new ArrayList<>();
 	
+	public final GitInformation git = new GitInformation();
+	
 	public QCProjectSet(File p, QCProject proj) {
 		this.path = p;
 		
@@ -30,8 +32,12 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 		for (QCProject proj : projects) {
 			proj.init(specFileRegex);
 		}
-		
 		Collections.sort(projects);
+
+		File gitdir = new File(path, ".git");
+		if (gitdir.exists() && gitdir.isDirectory()) {
+			git.load(gitdir);
+		}
 	}
 
 	@Override
@@ -115,5 +121,10 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 		}
 		
 		return result;
+	}
+
+	@Override
+	public GitInformation getGitInformation() {
+		return git;
 	}
 }
