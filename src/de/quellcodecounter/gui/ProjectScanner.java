@@ -50,7 +50,8 @@ public class ProjectScanner {
 		"tf", 
 		"pas", "dpr", 
 		"tex",
-		".gradle"
+		".gradle",
+		"py"
 	};
 	
 	public final static String[] FILETYPE_NAMES = {
@@ -65,7 +66,8 @@ public class ProjectScanner {
 		"Textfunge", 
 		"Delphi", "Delphi", 
 		"LaTeX",
-		"Groovy"
+		"Groovy",
+		"Python"
 	};
 	
 	public final static HashMap<String, Color> FILETYPE_COLORS = new HashMap<>();
@@ -88,6 +90,7 @@ public class ProjectScanner {
 		FILETYPE_COLORS.put("PHP", Color.decode("#6e03c1"));
 		FILETYPE_COLORS.put("Matlab", Color.decode("#bb92ac"));
 		FILETYPE_COLORS.put("HTML", Color.decode("#7dd3b0"));
+		FILETYPE_COLORS.put("Python", Color.decode("#3581ba"));
 		
 		FILETYPE_COLORS.put(null, Color.decode("#e4cc98"));
 	}
@@ -237,6 +240,9 @@ public class ProjectScanner {
 	private boolean isProjectSetDirectory(File dir) {
 		List<File> files = dirFilelist(dir);
 		List<File> dirs = dirDirlist(dir);
+		
+		if (getProjectList(dir, MAX_SET_SCAN_DEPTH).isEmpty())
+			return false;
 		
 		for (File f : files) {
 			for (String ext : PROJECT_SETS) {
