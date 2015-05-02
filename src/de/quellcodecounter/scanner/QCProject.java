@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.scanner;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import de.quellcodecounter.git.GitInformation;
 
 public class QCProject implements Comparable<QCProject>, QCDisplayableProjectElement {
 	private final File path;

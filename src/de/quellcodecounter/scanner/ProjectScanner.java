@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.scanner;
 
 import java.awt.Color;
 import java.io.File;

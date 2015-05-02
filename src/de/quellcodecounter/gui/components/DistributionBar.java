@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.gui.components;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -16,6 +16,8 @@ import javax.swing.UIManager;
 
 import org.jdesktop.swingx.image.ColorTintFilter;
 import org.jdesktop.swingx.image.StackBlurFilter;
+
+import de.quellcodecounter.scanner.ProjectScanner;
 
 public class DistributionBar extends JComponent implements MouseMotionListener {
 

@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.git;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.scanner;
 
 import java.awt.Desktop;
 import java.io.BufferedReader;

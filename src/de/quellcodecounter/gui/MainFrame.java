@@ -46,8 +46,19 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import de.quellcodecounter.gui.GitInformation.GitInformationCommit;
+import de.quellcodecounter.git.GitInformation.GitInformationCommit;
+import de.quellcodecounter.gui.components.DistributionBar;
+import de.quellcodecounter.gui.components.GitCommitPanel;
+import de.quellcodecounter.scanner.ProjectScanner;
+import de.quellcodecounter.scanner.QCDisplayableProjectElement;
+import de.quellcodecounter.scanner.QCFile;
+import de.quellcodecounter.scanner.QCLine;
+import de.quellcodecounter.scanner.QCProject;
+import de.quellcodecounter.scanner.QCProjectSet;
+import de.quellcodecounter.scanner.ScanEventListener;
+
 import java.awt.Component;
+
 import javax.swing.Box;
 
 public class MainFrame extends JFrame {

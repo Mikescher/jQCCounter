@@ -1,8 +1,10 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.scanner;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+
+import de.quellcodecounter.git.GitInformation;
 
 public interface QCDisplayableProjectElement {
 	public int getLineCount();

@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.scanner;
 
 public class QCLine implements Comparable<QCLine> {
 	private final String line;

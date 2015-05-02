@@ -1,4 +1,4 @@
-package de.quellcodecounter.gui;
+package de.quellcodecounter.gui.components;
 
 import java.awt.Color;
 import java.text.SimpleDateFormat;
@@ -11,7 +11,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 import net.miginfocom.swing.MigLayout;
-import de.quellcodecounter.gui.GitInformation.GitInformationCommit;
+import de.quellcodecounter.git.GitInformation.GitInformationCommit;
 
 public class GitCommitPanel extends JPanel {
 	private static final long serialVersionUID = -4199183104829595267L;
