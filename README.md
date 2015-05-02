@@ -12,6 +12,7 @@ A tool to see the total lines of code across multiple projects
  - Group projects into project sets (e.g. Visual Studio Solutions / Multi-Project gradle files)
  - Show Language distribution (similiar to github ...)
  - List **TODO**-comments in sourcecode files (via customizable Regex)
+ - Show git informations (remote, branch, commits, commits ahead, commits behind, ...)
 
 ###Included Language support:
 
@@ -27,3 +28,4 @@ A tool to see the total lines of code across multiple projects
  - Delphi
  - LaTeX
  - Groovy
+ - Python
