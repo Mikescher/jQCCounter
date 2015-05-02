@@ -29,3 +29,5 @@ A tool to see the total lines of code across multiple projects
  - LaTeX
  - Groovy
  - Python
+
+###[> Releases](https://github.com/Mikescher/jQCCounter/releases)
