@@ -15,12 +15,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -55,6 +59,7 @@ import de.quellcodecounter.scanner.QCFile;
 import de.quellcodecounter.scanner.QCLine;
 import de.quellcodecounter.scanner.QCProject;
 import de.quellcodecounter.scanner.QCProjectSet;
+import de.quellcodecounter.scanner.QCRootFolderSet;
 import de.quellcodecounter.scanner.ScanEventListener;
 
 import java.awt.Component;
@@ -74,7 +79,7 @@ public class MainFrame extends JFrame {
 	private JPanel pnlAction;
 	private JButton btnRefresh;
 	
-	private List<QCProjectSet> projects = new ArrayList<>();
+	private List<QCRootFolderSet> roots = new ArrayList<>();
 	private JProgressBar progressBar;
 	private JPanel pnlPath;
 	private JTextField edPath;
@@ -361,7 +366,11 @@ public class MainFrame extends JFrame {
 			return;
 		}
 		
-		edPath.setText(me.getAbsolutePath());
+		if (new File(me, "jQCCounter.cfg").isFile()) {
+			edPath.setText(new File(me, "jQCCounter.cfg").getAbsolutePath());
+		} else {
+			edPath.setText(me.getAbsolutePath());
+		}
 	}
 	
 	private void refresh() {
@@ -371,7 +380,7 @@ public class MainFrame extends JFrame {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						projects.clear();
+						roots.clear();
 						btnRefresh.setEnabled(false);
 						progressBar.setValue(0);
 						updateGUI(true);
@@ -400,11 +409,11 @@ public class MainFrame extends JFrame {
 			}
 			
 			@Override
-			public void onFinish(final List<QCProjectSet> result) {
+			public void onFinish(final List<QCRootFolderSet> result) {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						projects = result;
+						roots = result;
 						
 						btnRefresh.setEnabled(true);
 						progressBar.setValue(0);
@@ -414,13 +423,22 @@ public class MainFrame extends JFrame {
 			}
 
 			@Override
-			public void addProject(final QCProjectSet prog) {
+			public void updateRoot(QCRootFolderSet uroot) {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						projects.add(prog);
-						Collections.sort(projects);
-						
+						for (int i = 0; i < roots.size(); i++) {
+							if (roots.get(i).getName().equals(uroot.getName())) {
+								roots.remove(i);
+								roots.add(i, uroot);
+								Collections.sort(roots);
+								updateGUI(true);
+								return;
+							}
+						}
+
+						roots.add(uroot);
+						Collections.sort(roots);
 						updateGUI(true);
 					}
 				});
@@ -430,32 +448,72 @@ public class MainFrame extends JFrame {
 		Pattern regex = null;
 		try {
 			regex = Pattern.compile(edSpecLineRegex.getText(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+			if (new File(edPath.getText()).isFile()) {
+				List<String> lines = Files.lines(Paths.get(edPath.getText())).collect(Collectors.toList());
+				
+				scanner.scan(lines, regex);
+			} else {
+				scanner.scan(edPath.getText(), regex);
+			}
 		} catch (PatternSyntaxException e) {
-			// --
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
-		scanner.scan(edPath.getText(), regex);
+		
 	}
 
 	private void updateGUI(boolean refList) {
 		if (refList) {
-			DefaultMutableTreeNode root = new DefaultMutableTreeNode();
-			
-			for (QCProjectSet p : projects) {
-				if (p.isSingle()) {
-					root.add(new DefaultMutableTreeNode(p));
+			try {
+				DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+				
+				if (roots.size() == 1) {
+					for (QCProjectSet p : roots.get(0).children) {
+						if (p.initialized)
+						{
+							if (p.isSingle()) {
+								root.add(new DefaultMutableTreeNode(p));
+							} else {
+								DefaultMutableTreeNode setnode = new DefaultMutableTreeNode(p);
+								
+								for (QCProject qp : p.projects) {
+									setnode.add(new DefaultMutableTreeNode(qp));
+								}
+								
+								root.add(setnode);
+							}
+						}
+					}					
 				} else {
-					DefaultMutableTreeNode setnode = new DefaultMutableTreeNode(p);
-					
-					for (QCProject qp : p.projects) {
-						setnode.add(new DefaultMutableTreeNode(qp));
+					for (QCRootFolderSet r : roots) {
+						DefaultMutableTreeNode fr = new DefaultMutableTreeNode(r);
+						for (QCProjectSet p : r.children) {
+							if (p.initialized)
+							{
+								if (p.isSingle()) {
+									fr.add(new DefaultMutableTreeNode(p));
+								} else {
+									DefaultMutableTreeNode setnode = new DefaultMutableTreeNode(p);
+									
+									for (QCProject qp : p.projects) {
+										setnode.add(new DefaultMutableTreeNode(qp));
+									}
+									
+									fr.add(setnode);
+								}
+							}
+						}
+						root.add(fr);
 					}
-					
-					root.add(setnode);
 				}
-			}
 			
-			treeProjects.setModel(new DefaultTreeModel(root));
+				treeProjects.setModel(new DefaultTreeModel(root));
+			} catch (ConcurrentModificationException e) {
+				// ignored
+			}
 		}
 
 		expandAllNodes(treeProjects);

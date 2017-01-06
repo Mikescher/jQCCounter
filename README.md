@@ -14,9 +14,11 @@ A tool to see the total lines of code across multiple projects
  - List **TODO**-comments in sourcecode files (via customizable Regex)
  - Show git informations (remote, branch, commits, commits ahead, commits behind, ...)
 
+###[> Releases](https://github.com/Mikescher/jQCCounter/releases)
+
 ###Included Language support:
 
- - Java
+ - Java (Eclipse, IntelliJ, AndroidStudio)
  - Properties
  - C#
  - C
@@ -29,5 +31,24 @@ A tool to see the total lines of code across multiple projects
  - LaTeX
  - Groovy
  - Python
+ - Go
+ - Rust
+ - Everything IntelliJ
 
-###[> Releases](https://github.com/Mikescher/jQCCounter/releases)
+###Multifolder config
+
+By default jQCCounter searches in the current folder. But you can place a jQCCounter.cfg file beside the jar to supply it with multiple folders.
+The config syntax looks like this:
+~~~
+C|.\C\
+C++|.\C++\
+C#|.\C-Sharp\
+Java Eclipse|.\Java\workspace\
+Perl|.\Perl\
+PHP|.\PHP\
+Python|.\Python\
+~~~
+
+###Ignored folders
+
+Most rules are hard-coded in the jar (PR's welcome) but you can also exclude a folder by placing a `.qcignore` file in it

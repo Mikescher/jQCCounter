@@ -3,16 +3,19 @@ package de.quellcodecounter.scanner;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
-	public final static String VERSION = "2.6";
+	public final static String VERSION = "2.7";
 	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;
+	
+	public final static String IGNORE_HINT_FILE = ".qcignore";
 	
 	private final static String[] PROJECT_SETS = {
 		".sln",			// VS Solution
@@ -36,12 +39,14 @@ public class ProjectScanner {
 		".wsp",			// WinShell Project
 		".idea/",		// PHPStorm and other IDEA projects
 		"build.gradle", // gradle Project
+		".shproj",      // VS Shared Project
+		".codio",		// Codio Javascript Project
 	};
 	
 	public final static String[] FILETYPE_EXTENSIONS = {
 		"java", 
 		"properties",
-		"cs", 
+		"cs", "linq",
 		"xaml", 
 		"h", "c", 
 		"hpp", "cpp", "hxx", 
@@ -50,15 +55,17 @@ public class ProjectScanner {
 		"js", 
 		"tf", 
 		"pas", "dpr", 
-		"tex",
+		"tex", 
+		"lyx",
 		".gradle",
-		"py"
+		"py",
+		"go",
 	};
 	
 	public final static String[] FILETYPE_NAMES = {
 		"Java", 
 		"Properties", 
-		"C#", 
+		"C#", "C#", 
 		"XAML", 
 		"C", "C", 
 		"C++", "C++", "C++", 
@@ -67,11 +74,14 @@ public class ProjectScanner {
 		"javascript", 
 		"Textfunge", 
 		"Delphi", "Delphi", 
-		"LaTeX",
+		"LaTeX", 
+		"LyX",
 		"Groovy",
-		"Python"
+		"Python",
+		"Golang"
 	};
 	
+	// https://gist.github.com/caleorourke/8001163
 	public final static HashMap<String, Color> FILETYPE_COLORS = new HashMap<>();
 	static {
 		FILETYPE_COLORS.put("Java", Color.decode("#b07219"));
@@ -93,22 +103,63 @@ public class ProjectScanner {
 		FILETYPE_COLORS.put("Matlab", Color.decode("#bb92ac"));
 		FILETYPE_COLORS.put("HTML", Color.decode("#7dd3b0"));
 		FILETYPE_COLORS.put("Python", Color.decode("#3581ba"));
+		FILETYPE_COLORS.put("Go", Color.decode("#8d04eb"));
+		FILETYPE_COLORS.put("Rust", Color.decode("#dea584"));
+		FILETYPE_COLORS.put("LaTeX", Color.decode("#f15501"));
+		FILETYPE_COLORS.put("LyX", Color.decode("#f15501"));
 		
 		FILETYPE_COLORS.put(null, Color.decode("#e4cc98"));
 	}
 	
 	public final static String[] IGNORE_DIR = {
-		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include", "org/cocos2d", ".idea", "javadoc", "build",
+		",", "bin", "data", "res", "lib", "Resources", ".git", "Properties", "obj", "include", "org/cocos2d", ".idea", "javadoc", "build", "node_modules", "docs", "mybuilds"
 	};
 	
 	public final static String[] IGNORE_FILES = {
-		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h", "R.java", "jQuery.js", "bootstrap.js",
+		"dglOpenGL.pas", "glew.h", "freeglut.h", "wglew.h", "glxew.h", "R.java", "jQuery.js", "bootstrap.js", "Gruntfile.js", "package.json"
+	};
+
+	public final static String[] SUB_SOURCE_FOLDER = {
+		"Source", "src",
 	};
 	
 	private ScanEventListener listener;
 	
 	public ProjectScanner(ScanEventListener l) {
 		this.listener = l;
+	}
+	
+	public void scan(List<String> dirs, Pattern specFileRegex) {
+		List<QCRootFolderSet> roots = new ArrayList<>();
+		
+		listener.onInit();
+		
+		for (String line : dirs) {
+			if (line.trim().isEmpty()) continue;
+			
+			String name = line.split("\\|")[0];
+			String root = line.split("\\|")[1];
+			
+			List<QCProjectSet> projects = new ArrayList<>();
+			projects = getProjectSetList(new File(root), MAX_SCAN_DEPTH);
+			if (projects.size() > 0) {
+				QCRootFolderSet r = new QCRootFolderSet(name, new File(root), projects);
+				roots.add(r);
+				listener.setProgressMax(projects.size());
+
+				r.init(specFileRegex, (i) -> 
+				{
+					listener.setProgress(i);
+					listener.updateRoot(r);
+				});
+				
+				listener.updateRoot(r);
+			}
+		}
+		
+		Collections.sort(roots);
+		
+		listener.onFinish(roots);
 	}
 	
 	public void scan(String dir, Pattern specFileRegex) {
@@ -119,7 +170,8 @@ public class ProjectScanner {
 		projects = getProjectSetList(new File(dir), MAX_SCAN_DEPTH);
 		
 		listener.setProgressMax(projects.size());
-		
+
+		List<QCProjectSet> finProjects = new ArrayList<>();
 		for (int i = 0; i < projects.size(); i++) {
 			QCProjectSet p = projects.get(i);
 			
@@ -127,12 +179,17 @@ public class ProjectScanner {
 			
 			listener.setProgress(i);
 			
-			listener.addProject(p);
+			finProjects.add(p);
+			listener.updateRoot(new QCRootFolderSet("root", new File(dir), finProjects));
 		}
 		
 		Collections.sort(projects);
+
+		List<QCRootFolderSet> result = new ArrayList<>();
+		result.add(new QCRootFolderSet("root", new File(dir), finProjects));
+		result.get(0).init(specFileRegex);
 		
-		listener.onFinish(projects);
+		listener.onFinish(result);
 	}
 	
 	private ArrayList<File> dirFolderlist(File f) {
@@ -187,17 +244,34 @@ public class ProjectScanner {
 			List<File> folder = dirFolderlist(dir);
 
 			for (File f : folder) {
+				File realFolder = f;
+				
+				if (Arrays.asList(SUB_SOURCE_FOLDER).stream().anyMatch(p -> f.getName().equalsIgnoreCase(p))) {
+					realFolder = realFolder.getParentFile();
+				}
+				
 				if (isProjectSetDirectory(f)) {
-					result.add(new QCProjectSet(f, getProjectList(f, MAX_SET_SCAN_DEPTH)));
+					result.add(new QCProjectSet(realFolder, getProjectList(f, MAX_SET_SCAN_DEPTH)));
 				} else if (isSingleProjectDirectory(f)) {
-					result.add(new QCProjectSet(f, new QCProject(f)));
+					result.add(new QCProjectSet(realFolder, new QCProject(realFolder)));
 				} else {
-					result.addAll(getProjectSetList(f, negDepth - 1));
+					List<QCProjectSet> rec = getProjectSetList(f, negDepth - 1);
+					
+					if (rec.size() > 1) {
+						result.addAll(rec);
+					} else if (isGitFolder(f)) {
+						result.add(new QCProjectSet(f, new QCProject(f)));
+					}
 				}
 			}
 		}
 
 		return result;
+	}
+
+	private boolean isGitFolder(File f) {
+		File gitdir = new File(f, ".git");
+		return (gitdir.exists() && gitdir.isDirectory());
 	}
 
 	private List<QCProject> getProjectList(File dir, int remDepth) {

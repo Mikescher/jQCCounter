@@ -43,6 +43,8 @@ public class QCProject implements Comparable<QCProject>, QCDisplayableProjectEle
 			return result;
 		}
 
+		if (new File(f, ProjectScanner.IGNORE_HINT_FILE).isFile()) return result;
+		
 		if (!f.isDirectory()) {
 			String type = GetIndexableFileType(f);
 			if (type != null) {

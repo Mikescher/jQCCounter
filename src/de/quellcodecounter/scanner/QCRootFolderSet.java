@@ -7,69 +7,62 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import de.quellcodecounter.git.GitInformation;
 
-public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProjectElement {
+public class QCRootFolderSet implements Comparable<QCRootFolderSet>, QCDisplayableProjectElement {
 	private final File path;
-
-	public List<QCProject> projects = new ArrayList<>();
+	private final String name;
 	
-	public final GitInformation git = new GitInformation();
-	
-	public boolean initialized = false;
-	
-	public QCProjectSet(File p, QCProject proj) {
-		this.path = p;
+	public List<QCProjectSet> children = new ArrayList<>();
 		
-		projects.add(proj);
-
-		if (new File(path, ProjectScanner.IGNORE_HINT_FILE).isFile()) projects.clear();
+	public QCRootFolderSet(String n, File p, QCProjectSet proj) {
+		this.path = p;
+		this.name = n;
+		
+		children.add(proj);
 	}
 
-	public QCProjectSet(File p, List<QCProject> proj) {
+	public QCRootFolderSet(String n, File p, List<QCProjectSet> proj) {
 		this.path = p;
+		this.name = n;
 		
-		projects.addAll(proj);
-
-		if (new File(path, ProjectScanner.IGNORE_HINT_FILE).isFile()) projects.clear();
+		children.addAll(proj);
 	}
 
 	public void init(Pattern specFileRegex) {
-		if (initialized) return;
-		
-		for (QCProject proj : projects) {
-			proj.init(specFileRegex);
-		}
-		
-		for (int i = projects.size() - 1; i >= 0; i--) {
-			if (projects.get(i).getFileCount() == 0) projects.remove(i);
-		}
-		
-		Collections.sort(projects);
+		init(specFileRegex, i -> {/**/} );
+	}
 
-		File gitdir = new File(path, ".git");
-		if (gitdir.exists() && gitdir.isDirectory()) {
-			git.load(gitdir);
+	public void init(Pattern specFileRegex, Consumer<Integer> r) {
+		int p = 0;
+		for (QCProjectSet child : children) {
+			child.init(specFileRegex);
+			r.accept(p++);
 		}
 		
-		initialized = true;
+		for (int i = children.size() - 1; i >= 0; i--) {
+			if (children.get(i).projects.size() == 0) children.remove(i);
+		}
+		
+		Collections.sort(children);
 	}
 
 	@Override
-	public int compareTo(QCProjectSet a) {
-		return Integer.compare(a.getLineCount(), getLineCount());
+	public int compareTo(QCRootFolderSet a) {
+		return Integer.compare(a.children.size(), children.size());
 	}
 	
 	public boolean isSingle() {
-		return projects.size() == 1;
+		return children.size() == 1;
 	}
 	
 	@Override
 	public int getLineCount() {
 		int c = 0;
-		for (QCProject qp : projects) {
+		for (QCProjectSet qp : children) {
 			c += qp.getLineCount();
 		}
 		return c;
@@ -77,13 +70,13 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 
 	@Override
 	public String getName() {
-		return path.getName();
+		return name;
 	}
 
 	@Override
 	public List<QCFile> getFiles() {
 		List<QCFile> c = new ArrayList<>();
-		for (QCProject qp : projects) {
+		for (QCProjectSet qp : children) {
 			c.addAll(qp.getFiles());
 		}
 		return c;
@@ -101,15 +94,13 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 	
 	@Override
 	public String toString() {
-		int slc = getSpecLineCount();
-		String s_slc = (slc == 0) ? ("") : ((slc == 1) ? ("  [" + getSpecLineCount() + " Match]") : (" [" + getSpecLineCount() + " Matches]"));
-		return String.format("% 6d ", getLineCount()) + getName() + s_slc;
+		return getName() + " (" + children.size() + " Projects)";
 	}
 
 	@Override
 	public List<QCLine> getSpecLines() {
 		List<QCLine> result = new ArrayList<>();
-		for (QCProject f : projects) {
+		for (QCProjectSet f : children) {
 			result.addAll(f.getSpecLines());
 		}
 		return result;
@@ -118,7 +109,7 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 	@Override
 	public int getSpecLineCount() {
 		int result = 0;
-		for (QCProject p : projects) {
+		for (QCProjectSet p : children) {
 			result += p.getSpecLineCount();
 		}
 		return result;
@@ -128,7 +119,7 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 	public Map<String, Integer> getLanguageDistro() {
 		Map<String, Integer> result = new HashMap<String, Integer>();
 		
-		for (QCProject qcProject : projects) {
+		for (QCProjectSet qcProject : children) {
 			for (Entry<String, Integer> entry : qcProject.getLanguageDistro().entrySet()) {
 				if (result.containsKey(entry.getKey()))
 					result.put(entry.getKey(), result.get(entry.getKey()) + entry.getValue());
@@ -142,6 +133,6 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 
 	@Override
 	public GitInformation getGitInformation() {
-		return git;
+		return new GitInformation();
 	}
 }
