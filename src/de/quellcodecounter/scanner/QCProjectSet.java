@@ -1,6 +1,7 @@
 package de.quellcodecounter.scanner;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+
+import org.ini4j.Ini;
+import org.ini4j.InvalidFileFormatException;
+import org.ini4j.Profile.Section;
 
 import de.quellcodecounter.git.GitInformation;
 
@@ -38,6 +43,13 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 
 	public void init(Pattern specFileRegex) {
 		if (initialized) return;
+
+		File gitdir = new File(path, ".git");
+		if (gitdir.exists() && gitdir.isDirectory()) {
+			git.load(gitdir);
+			File gitmodFile = new File (path, ".gitmodules");
+			if (gitmodFile.exists() && gitmodFile.isFile()) removeGitmodules(gitmodFile);
+		}
 		
 		for (QCProject proj : projects) {
 			proj.init(specFileRegex);
@@ -48,13 +60,45 @@ public class QCProjectSet implements Comparable<QCProjectSet>, QCDisplayableProj
 		}
 		
 		Collections.sort(projects);
-
-		File gitdir = new File(path, ".git");
-		if (gitdir.exists() && gitdir.isDirectory()) {
-			git.load(gitdir);
-		}
 		
 		initialized = true;
+	}
+
+	private void removeGitmodules(File gmFile) {
+		ArrayList<String> exclusions = new ArrayList<>();
+		
+		try {
+			Ini ini = new Ini(gmFile);
+			for (Entry<String, Section> entry : ini.entrySet()) {
+				String path = entry.getValue().get("path");
+				if (path != null) exclusions.add(path);
+			}
+		} catch (InvalidFileFormatException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		for (QCProject proj : new ArrayList<>(projects)) {
+			String pBase = getPath().getAbsolutePath().toLowerCase().replace('\\', '/');
+			String pSub  = proj.getPath().getAbsolutePath().toLowerCase().replace('\\', '/');
+			
+			pSub = pSub.replace(pBase, "");
+			if (pSub.startsWith("/")) pSub = pSub.substring(1);
+			if (pSub.endsWith("/")) pSub = pSub.substring(0, pSub.length()-1);
+			
+			for (String excl : exclusions) {
+				excl = excl.toLowerCase().replace('\\', '/');
+				if (excl.startsWith("/")) excl = excl.substring(1);
+				if (excl.endsWith("/")) excl = excl.substring(0, excl.length()-1);
+				
+				if (pSub.startsWith(excl)) {
+					projects.remove(proj);
+					break;
+				}
+			}
+			
+		}
 	}
 
 	@Override
