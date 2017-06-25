@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
-	public final static String VERSION = "2.8";
+	public final static String VERSION = "2.9";
 	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;
@@ -199,6 +199,8 @@ public class ProjectScanner {
 			File[] chld = f.listFiles();
 
 			for (File sf : chld) {
+				if (sf.isFile() && sf.getName().equalsIgnoreCase(IGNORE_HINT_FILE)) return new ArrayList<>();
+				
 				if (!sf.getName().equals(".") && !sf.getName().equals("..") && sf.isDirectory()) {
 					res.add(sf);
 				}
@@ -215,21 +217,6 @@ public class ProjectScanner {
 
 			for (File sf : chld) {
 				if (!sf.getName().equals(".") && !sf.getName().equals("..") && sf.isFile()) {
-					res.add(sf);
-				}
-			}
-		}
-		return res;
-	}
-	
-	private ArrayList<File> dirDirlist(File f) {
-		ArrayList<File> res = new ArrayList<>();
-
-		if (f.exists() && f.isDirectory()) {
-			File[] chld = f.listFiles();
-
-			for (File sf : chld) {
-				if (!sf.getName().equals(".") && !sf.getName().equals("..") && sf.isDirectory()) {
 					res.add(sf);
 				}
 			}
@@ -257,7 +244,7 @@ public class ProjectScanner {
 				} else {
 					List<QCProjectSet> rec = getProjectSetList(f, negDepth - 1);
 					
-					if (rec.size() > 1) {
+					if (rec.size() > 0) {
 						result.addAll(rec);
 					} else if (isGitFolder(f)) {
 						result.add(new QCProjectSet(f, new QCProject(f)));
@@ -294,7 +281,7 @@ public class ProjectScanner {
 
 	private boolean isSingleProjectDirectory(File dir) {
 		List<File> files = dirFilelist(dir);
-		List<File> dirs = dirDirlist(dir);
+		List<File> dirs = dirFolderlist(dir);
 		
 		for (File f : files) {
 			for (String ext : PROJECT_EXTENSIONS) {
@@ -315,7 +302,7 @@ public class ProjectScanner {
 
 	private boolean isProjectSetDirectory(File dir) {
 		List<File> files = dirFilelist(dir);
-		List<File> dirs = dirDirlist(dir);
+		List<File> dirs = dirFolderlist(dir);
 		
 		if (getProjectList(dir, MAX_SET_SCAN_DEPTH).isEmpty())
 			return false;
