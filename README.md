@@ -5,7 +5,7 @@ A tool to see the total lines of code across multiple projects
 
 ![preview](https://raw.githubusercontent.com/Mikescher/jQCCounter/master/data/preview.png)
 
-###Features:
+### Features:
 
  - portable on-jar program
  - Show LOC of all projects in directory
@@ -14,9 +14,9 @@ A tool to see the total lines of code across multiple projects
  - List **TODO**-comments in sourcecode files (via customizable Regex)
  - Show git informations (remote, branch, commits, commits ahead, commits behind, ...)
 
-###[> Releases](https://github.com/Mikescher/jQCCounter/releases)
+### [> Releases](https://github.com/Mikescher/jQCCounter/releases)
 
-###Included Language support:
+### Included Language support:
 
  - Java (Eclipse, IntelliJ, AndroidStudio)
  - Properties
@@ -35,7 +35,7 @@ A tool to see the total lines of code across multiple projects
  - Rust
  - Everything IntelliJ
 
-###Multifolder config
+### Multifolder config
 
 By default jQCCounter searches in the current folder. But you can place a jQCCounter.cfg file beside the jar to supply it with multiple folders.
 The config syntax looks like this:
@@ -49,6 +49,6 @@ PHP|.\PHP\
 Python|.\Python\
 ~~~
 
-###Ignored folders
+### Ignored folders
 
 Most rules are hard-coded in the jar (PR's welcome) but you can also exclude a folder by placing a `.qcignore` file in it

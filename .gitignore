@@ -12,3 +12,5 @@
 hs_err_pid*
 
 /miglayout15-swing.jar
+
+build/

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class ProjectScanner {
-	public final static String VERSION = "2.9";
+	public final static String VERSION = "2.10";
 	
 	private final static int MAX_SCAN_DEPTH = 8;
 	private final static int MAX_SET_SCAN_DEPTH = 3;
@@ -60,6 +60,7 @@ public class ProjectScanner {
 		".gradle",
 		"py",
 		"go",
+		"rs"
 	};
 	
 	public final static String[] FILETYPE_NAMES = {
@@ -78,7 +79,8 @@ public class ProjectScanner {
 		"LyX",
 		"Groovy",
 		"Python",
-		"Golang"
+		"Golang",
+		"Rust",
 	};
 	
 	// https://gist.github.com/caleorourke/8001163
@@ -107,6 +109,7 @@ public class ProjectScanner {
 		FILETYPE_COLORS.put("Rust", Color.decode("#dea584"));
 		FILETYPE_COLORS.put("LaTeX", Color.decode("#f15501"));
 		FILETYPE_COLORS.put("LyX", Color.decode("#f15501"));
+		FILETYPE_COLORS.put("Rust", Color.decode("#dea584"));
 		
 		FILETYPE_COLORS.put(null, Color.decode("#e4cc98"));
 	}
